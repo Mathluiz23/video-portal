@@ -5,59 +5,69 @@ using video_portal.Repository;
 using video_portal.Models;
 using Microsoft.Extensions.DependencyInjection;
 namespace video_portal.Test;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
+using FluentAssertions;
 
 public class VideoPortalTest : IClassFixture<WebApplicationFactory<Program>>
 {
-    public HttpClient client;
+  public HttpClient client;
 
-    public VideoPortalTest(WebApplicationFactory<Program> factory)
+  public VideoPortalTest(WebApplicationFactory<Program> factory)
+  {
+    client = factory.WithWebHostBuilder(builder =>
     {
-        client = factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
+      builder.ConfigureServices(services =>
+          {
+            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<VideoPortalContext>));
+            if (descriptor != null)
             {
-                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<VideoPortalContext>));
-                if (descriptor != null)
+              services.Remove(descriptor);
+            }
+            services.AddDbContext<VideoPortalTestContext>(options =>
                 {
-                    services.Remove(descriptor);
-                }
-                services.AddDbContext<VideoPortalTestContext>(options =>
-                {
-                    options.UseInMemoryDatabase("InMemoryTest");
+                  options.UseInMemoryDatabase("InMemoryTest");
                 });
-                services.AddScoped<IVideoPortalContext, VideoPortalTestContext>();
-                services.AddScoped<IVideoPortalRepository, VideoPortalRepository>();
-                var sp = services.BuildServiceProvider();
-                using (var scope = sp.CreateScope())
-                using (var appContext = scope.ServiceProvider.GetRequiredService<VideoPortalTestContext>())
-                {
-                    appContext.Database.EnsureCreated();
-                    appContext.Database.EnsureDeleted();
-                    appContext.Database.EnsureCreated();
-                    appContext.Channels.AddRange(
-                        Helpers.GetChannelListForTests()
-                    );
-                    appContext.Videos.AddRange(
-                        Helpers.GetVideoListForTests()
-                    );
-                    appContext.Users.Add(new User { UserId = 1, Username = "Test", Email = "Test" });
-                    appContext.Comments.AddRange(
-                        Helpers.GetCommentListForTests()
-                    );
-                    appContext.SaveChanges();
-                }
-            });
-        }).CreateClient();
-    }
+            services.AddScoped<IVideoPortalContext, VideoPortalTestContext>();
+            services.AddScoped<IVideoPortalRepository, VideoPortalRepository>();
+            var sp = services.BuildServiceProvider();
+            using (var scope = sp.CreateScope())
+            using (var appContext = scope.ServiceProvider.GetRequiredService<VideoPortalTestContext>())
+            {
+              appContext.Database.EnsureCreated();
+              appContext.Database.EnsureDeleted();
+              appContext.Database.EnsureCreated();
+              appContext.Channels.AddRange(
+                      Helpers.GetChannelListForTests()
+                  );
+              appContext.Videos.AddRange(
+                      Helpers.GetVideoListForTests()
+                  );
+              appContext.Users.Add(new User { UserId = 1, Username = "Test", Email = "Test" });
+              appContext.Comments.AddRange(
+                      Helpers.GetCommentListForTests()
+                  );
+              appContext.SaveChanges();
+            }
+          });
+    }).CreateClient();
+  }
 
-    [Theory(DisplayName = "GET api/video Deve retornar uma lista de vídeos")]
-    [MemberData(nameof(ShouldReturnAVideoListData))]
-    public async Task ShouldReturnAVideoList(List<Video> videosExpected)
-    {
-        throw new NotImplementedException();
-    }
+  [Theory(DisplayName = "GET api/video Deve retornar uma lista de vídeos")]
+  [MemberData(nameof(ShouldReturnAVideoListData))]
+  public async Task ShouldReturnAVideoList(List<Video> videosExpected)
+  {
+    HttpResponseMessage res = await client.GetAsync("api/video");
+    List<Video> resValue = await res.Content.ReadFromJsonAsync<List<Video>>();
 
-    public static readonly TheoryData<List<Video>> ShouldReturnAVideoListData = new()
+    res.StatusCode.Should().Be(HttpStatusCode.OK);
+    resValue.Should().BeEquivalentTo(videosExpected);
+  }
+
+  public static readonly TheoryData<List<Video>> ShouldReturnAVideoListData = new()
     {
         new()
         {
@@ -89,14 +99,18 @@ public class VideoPortalTest : IClassFixture<WebApplicationFactory<Program>>
         }
     };
 
-    [Theory(DisplayName = "GET channel/{id}/video Deve retornar os videos do canal")]
-    [MemberData(nameof(ShouldReturnVideosFromChannelData))]
-    public async Task ShouldReturnAChannelWithVideos(Channel channelEntry, List<Video> expectedVideos)
-    {
-        throw new NotImplementedException();
-    }
+  [Theory(DisplayName = "GET channel/{id}/video Deve retornar os videos do canal")]
+  [MemberData(nameof(ShouldReturnVideosFromChannelData))]
+  public async Task ShouldReturnAChannelWithVideos(Channel channelEntry, List<Video> expectedVideos)
+  {
+    HttpResponseMessage res = await client.GetAsync($"api/channel/{channelEntry.ChannelId}/video");
+    List<Video> resValue = await res.Content.ReadFromJsonAsync<List<Video>>();
 
-    public static readonly TheoryData<Channel, List<Video>> ShouldReturnVideosFromChannelData = new()
+    res.StatusCode.Should().Be(HttpStatusCode.OK);
+    resValue.Should().BeEquivalentTo(expectedVideos);
+  }
+
+  public static readonly TheoryData<Channel, List<Video>> ShouldReturnVideosFromChannelData = new()
     {
         {
             new Channel { ChannelId = 3, ChannelName = "Channel With multiple videos", ChannelDescription = "Test", Url = "Test" },
