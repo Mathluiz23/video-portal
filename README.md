@@ -1,4 +1,4 @@
-# Boas-vindas ao repositório do exercício Portal de Vídeos
+# Boas-vindas ao projeto Portal de Vídeos
 
 # Orientações
 
