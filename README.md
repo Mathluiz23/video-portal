@@ -9,7 +9,7 @@
 
 - Use o comando: `git clone git@github.com:Mathluiz23/video-portal.git`.
 - Entre na pasta do repositório que você acabou de clonar:
-  - `cd git@github.com:Mathluiz23/video-portal.git`
+  - `cd video-portal`
 
 2. Instale as dependências
 
