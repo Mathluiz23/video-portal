@@ -1,4 +1,4 @@
-# Boas-vindas ao projeto Portal de Vídeos
+# Projeto Portal de Vídeos
 
 # Orientações
 
@@ -7,9 +7,9 @@
 
 1. Clone o repositório
 
-- Use o comando: `git clone git@github.com:tryber/acc-csharp-0x-project/exercises-<ATUALIZAR>.git`.
+- Use o comando: `git clone git@github.com:Mathluiz23/video-portal.git`.
 - Entre na pasta do repositório que você acabou de clonar:
-  - `cd acc-csharp-0x-project/exercises-<ATUALIZAR>`
+  - `cd git@github.com:Mathluiz23/video-portal.git`
 
 2. Instale as dependências
 
